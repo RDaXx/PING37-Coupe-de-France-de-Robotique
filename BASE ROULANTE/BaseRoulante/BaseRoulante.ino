@@ -30,7 +30,6 @@ PID PID_M3(&Robot.motor[2].PID_input, &Robot.motor[2].PID_output, &Robot.motor[2
 
 PID PID_Motor[3] = {PID_M1, PID_M2, PID_M3};
 
-
 /**************MAIN***************/
 void setup() {
 
@@ -58,7 +57,8 @@ void setup() {
 }
 
 void loop() {
-  
+ 
+ /******Réception et execution des fonctions de déplacement*****/
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
     int startIndex = command.indexOf("(");
@@ -80,10 +80,12 @@ void loop() {
     }
   }
 
-  //Impose la vitesse des moteurs à 0 pour contourner le PID et éviter les variations autour de 0
+  /**************************************/
+
+  //PID
   for(int i=0; i<3; i++){
     
-    if(Robot.motor[i].setpoint == 0 && Robot.motor[i].encoderSpeed < 5){
+    if(Robot.motor[i].setpoint == 0 && Robot.motor[i].encoderSpeed < 5){  //Mise à 0 forcée d'un moteur pour éviter les variations du PID autour de 0
       Robot.motor[i].Stop();
       Robot.motor[i].encoder_count = 0;
       Robot.motor[i].encoderSpeed = 0;
@@ -97,13 +99,13 @@ void loop() {
     }
   }
 
-  //ecritureData();
+  ecritureData();
 }
 
 
 /***********FONCTIONS*************/
 
-void EncoderCountM1() {
+void EncoderCountM1() { //Mise à jour position encodeur moteur 1
   int a = digitalRead(Robot.motor[0].encoder_a_pin);
   int b = digitalRead(Robot.motor[0].encoder_b_pin);
 
@@ -113,7 +115,7 @@ void EncoderCountM1() {
   else if (b == HIGH && a == LOW)  {Robot.motor[0].encoder_count --;  Robot.motor[0].encoder_count_backup --;Robot.motor[0].encoder_pos --;}
 } 
   
-void EncoderCountM2() {
+void EncoderCountM2() { //Mise à jour position encodeur moteur 2
   int a = digitalRead(Robot.motor[1].encoder_a_pin);
   int b = digitalRead(Robot.motor[1].encoder_b_pin);
 
@@ -123,7 +125,7 @@ void EncoderCountM2() {
   else if (b == HIGH && a == LOW)  {Robot.motor[1].encoder_count --;  Robot.motor[1].encoder_count_backup --;Robot.motor[1].encoder_pos --;}
 }
 
-void EncoderCountM3() {
+void EncoderCountM3() { //Mise à jour position encodeur moteur 3
   int a = digitalRead(Robot.motor[2].encoder_a_pin);
   int b = digitalRead(Robot.motor[2].encoder_b_pin);
 
@@ -133,17 +135,17 @@ void EncoderCountM3() {
   else if (b == HIGH && a == LOW)  {Robot.motor[2].encoder_count --;  Robot.motor[2].encoder_count_backup --;Robot.motor[2].encoder_pos --;}
 }
 
-void GetEncodersSpeed() { 
+void GetEncodersSpeed() {   //Mise à jour vitesse des moteurs
   int i;
   for(i = 0; i < 3; i++){
     double encoderPulses = Robot.motor[i].encoder_count;
     Robot.motor[i].encoder_count = 0; // remet le compteur à zéro pour le prochain calcul
     Robot.motor[i].encoderSpeed = (encoderPulses / 2880)/dt * 60;
   }
-  Robot.update_pos();
+  Robot.update_pos();   //Mise à jour de la position du robot
 }
 
-void ecritureData(void) {
+void ecritureData(void) {   //La fonction permet d'afficher des données toutes les 100ms
 
   // Ecriture des données en sortie tous les TSDATA millisecondes
   tempsCourant = millis();
@@ -153,16 +155,18 @@ void ecritureData(void) {
     
     
     Serial.print(",");
-    Serial.print(Robot.motor[2].encoderSpeed);
+    Serial.print(Robot.motor[1].encoderSpeed);  //Vitesse moteur 1
     Serial.print("\r");
     Serial.print("\n");
-    Serial.print(Robot.motor[2].setpoint);
+    Serial.print(Robot.motor[1].setpoint);
 
     tempsDernierEnvoi = tempsCourant;
   }
 }
 
-void com_init() {
+
+
+void com_init() { //Permet d'initialiser la communication Raspberry/Arduino
   String input;
 
   do{

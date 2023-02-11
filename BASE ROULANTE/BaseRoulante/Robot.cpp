@@ -2,32 +2,41 @@
 #include "Motor.h"
 #include "RobotPin.h"
 
-
+//Déclaration des objets "moteur"
 Robot::Robot(Motor m1, Motor m2, Motor m3){
   motor[0] = m1;
   motor[1] = m2;
   motor[2] = m3;
 }
 
-void Robot::Motion_Control(Direction direction)
+//Matrice de déplacement du robot
+void Robot::set_robot_speeds(float x_speed, float y_speed, float z_speed){
+
+  motor[0].setpoint = -0.33*x_speed + 0.58*y_speed + 0.33*z_speed;
+  motor[1].setpoint = -0.33*x_speed - 0.58*y_speed + 0.33*z_speed;
+  motor[2].setpoint = 0.67*x_speed + 0*y_speed + 0.33*z_speed;
+}
+
+void Robot::Motion_Control(Direction direction, float speed)
 {
   switch(direction)
   {
     case STOP:
                   Stop();break;
     case FORWARD:
-                  Forward(100);break;
+                  Forward(speed);break;
     case BACK:
-                  Back(100);break;
+                  Back(speed);break;
     case LEFT:
-                  Left(100);break;
+                  Left(speed);break;
     case RIGHT:
-                  Right(100);break;
+                  Right(speed);break;
     default:      
                   Stop();break;
   }
 }
 
+/********Fonctions de déplacement du robot*******/
 void Robot::Stop()
 {
   set_robot_speeds(0,0,0);
@@ -70,6 +79,10 @@ void Robot::Rotate_Left(float speed)
   statut_direction = Direction(ROTATE_LEFT);
 }
 
+
+/*****Déplacement du robot à une position définie******/
+//Utilisation des encodeurs des moteurs
+
 void Robot::go_to_y_position(double y, float speed) {
 
   request_pos_y = y;
@@ -108,9 +121,9 @@ void Robot::go_to_x_position(double x, float speed) {
   }
 }
 
-void Robot::turn_to_z_position(int z_angle , float speed) {
+void Robot::turn_to_z_position(double z_angle , float speed) {
 
-  request_orientation_z = z_angle;
+  request_orientation_z = z_angle/360;
 
   if((previous_orientation_z - z_angle) > 0 && pos_reached){
     Rotate_Left(speed);
@@ -127,52 +140,47 @@ void Robot::turn_to_z_position(int z_angle , float speed) {
   }
 }
 
-void Robot::set_robot_speeds(float x_speed, float y_speed, float z_speed){
 
-  motor[0].setpoint = -0.33*x_speed + 0.58*y_speed + 0.33*z_speed;
-  motor[1].setpoint = -0.33*x_speed - 0.58*y_speed + 0.33*z_speed;
-  motor[2].setpoint = 0.63*x_speed + 0*y_speed + 0.33*z_speed;
-}
-
+//Mise à jour de la position du robot
 void Robot::update_pos(){
 
   switch(statut_direction){
 
-    case Direction(FORWARD):
+    case Direction(FORWARD):  //Mise à jour sur l'axe Y sens positif
 
       pos_y -= (double)motor[0].encoder_pos/TICK_NMB_1M_FRWD_BCK;
       motor[0].encoder_pos = 0;
     break;
 
-    case Direction(BACK):
+    case Direction(BACK): //Mise à jour sur l'axe Y sens négatif
       
       pos_y -= (double)motor[0].encoder_pos/TICK_NMB_1M_FRWD_BCK;
       motor[0].encoder_pos = 0;
     break;
 
-    case Direction(LEFT):
+    case Direction(LEFT): //Mise à jour sur l'axe X sens négatif
       pos_x -= -(double)motor[2].encoder_pos/TICK_NMB_1M_RGHT_LFT;
       motor[2].encoder_pos = 0;
     break;
 
-    case Direction(RIGHT):
+    case Direction(RIGHT):  //Mise à jour sur l'axe X sens positif
       pos_x -= (double)motor[2].encoder_pos/TICK_NMB_1M_RGHT_LFT;
       motor[2].encoder_pos = 0;
     break;
 
-    case Direction(ROTATE_LEFT):
+    case Direction(ROTATE_LEFT):  //Mise à jour sur l'axe Z sens négatif
       orientation_z -= -(double)motor[2].encoder_pos/TICK_NMB_360_RRGHT_RLFT;
       motor[2].encoder_pos = 0;
     break;
 
-    case Direction(ROTATE_RIGHT):
+    case Direction(ROTATE_RIGHT): //Mise à jour sur l'axe Z sens positif
       orientation_z -= (double)motor[2].encoder_pos/TICK_NMB_360_RRGHT_RLFT;
-      Serial.println(orientation_z);
+      //Serial.println(orientation_z);
       motor[2].encoder_pos = 0;
     break;
   }
 
-  if(!pos_reached){
+  if(!pos_reached){   //Cette partie de la fonction permet de déterminer si la position commandée a été atteinte
 
     //Check Y position    
     if((pos_y - request_pos_y >= 0 && statut_direction == Direction(FORWARD)) ||  (pos_y - request_pos_y <= 0 && statut_direction == Direction(BACK))){
@@ -191,12 +199,14 @@ void Robot::update_pos(){
     }
 
     //Check Z position
-    if((orientation_z - request_orientation_z >= 0 && statut_direction == Direction(ROTATE_RIGHT))  ||  (pos_x - request_pos_x <= 0 && statut_direction == Direction(ROTATE_LEFT))){
+    if((orientation_z - request_orientation_z >= 0 && statut_direction == Direction(ROTATE_RIGHT))  ||  (orientation_z - request_orientation_z <= 0 && statut_direction == Direction(ROTATE_LEFT))){
       Stop();
       orientation_z = request_orientation_z;
       previous_orientation_z = request_orientation_z;
       pos_reached = true;
     }
+    String message = "X :" + String(pos_x)+"y :" + String(pos_y);
+    Serial.println(message);
   }
 
 }

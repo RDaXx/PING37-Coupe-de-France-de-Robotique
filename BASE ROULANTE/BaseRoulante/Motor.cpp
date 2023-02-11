@@ -10,7 +10,7 @@ Motor::Motor(int pwm, int direction, int encoder_a, int encoder_b){
   Pin_init_motor();
 }
 
-void Motor::Pin_nit_motor()i
+void Motor::Pin_init_motor()
 {
   pinMode(pwm_pin, OUTPUT);
   pinMode(direction_pin, OUTPUT);
@@ -18,6 +18,9 @@ void Motor::Pin_nit_motor()i
   pinMode(encoder_b_pin, INPUT);
 }
 
+
+//La vitesse max des moteurs est de 120 RPM.
+//Dans les fonctions suivantes, la vitesse indiquée en commande est rapportée à la valeur max d'une PWM, 255
 
 void Motor::Stop()
 {

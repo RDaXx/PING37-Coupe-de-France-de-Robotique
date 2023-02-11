@@ -51,10 +51,10 @@ class Robot
 
           void go_to_y_position(double y, float speed);
           void go_to_x_position(double x, float speed);
-          void turn_to_z_position(int z_angle , float speed);
+          void turn_to_z_position(double z_angle , float speed);
           void update_pos();
 
-          void Motion_Control(Direction direction);
+          void Motion_Control(Direction direction, float speed);
 
           /********PID setings********/
           //Motor1
@@ -72,9 +72,9 @@ class Robot
           volatile double pos_y = 0;
           double request_pos_y = 0;
 
-          int previous_orientation_z = 0;
-          volatile int orientation_z = 0;
-          int request_orientation_z = 0;
+          double previous_orientation_z = 0;
+          volatile double orientation_z = 0;
+          double request_orientation_z = 0;
 
           int pos_reached = true;
           int statut_direction = Direction(STOP);
